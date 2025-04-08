@@ -30,9 +30,11 @@ def getSchemas(engine, host, user, password, database):
                 """)
             elif engine == "MSSQL":
                 cur.execute("""
-                    SELECT name
-                    FROM sys.schemas
-                    WHERE name NOT IN ('dbo', 'guest', 'INFORMATION_SCHEMA', 'sys');
+                    SELECT DISTINCT s.name
+                    FROM sys.schemas s
+                    INNER JOIN sys.tables t ON s.schema_id = t.schema_id
+                    WHERE s.name NOT IN ('guest', 'INFORMATION_SCHEMA', 'sys', 'db_owner', 'db_accessadmin', 'db_securityadmin')
+                    ORDER BY s.name;
                 """)
             schemas = [row[0] for row in cur.fetchall()]
     except Exception as e:
@@ -67,10 +69,11 @@ def getTables(engine, host, user, password, database, schema):
                     AND table_type = 'BASE TABLE';
                 """)
             elif engine == "MSSQL":
-                cur.execute("""
+                cur.execute(f"""
                     SELECT TABLE_NAME
                     FROM INFORMATION_SCHEMA.TABLES
-                    WHERE TABLE_TYPE = 'BASE TABLE';
+                    WHERE TABLE_TYPE = 'BASE TABLE'
+                    AND TABLE_SCHEMA = '{schema}';
                 """)
             tables = [row[0] for row in cur.fetchall()]
     except Exception as e:
