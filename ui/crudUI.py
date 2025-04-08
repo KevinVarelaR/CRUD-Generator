@@ -51,8 +51,19 @@ class CrudGenerator(tk.Tk):
         self.topFrame = tk.Frame(self.mainFrame, bg="#f0f8ff")
         self.topFrame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
-        self.leftFrame = tk.Frame(self.topFrame, bg="#e6f2ff", bd=2, relief=tk.GROOVE)
-        self.leftFrame.pack(side=tk.LEFT, padx=20, pady=20, fill=tk.Y)
+        leftContainer = tk.Frame(self.topFrame, bg="#f0f8ff")
+        leftContainer.pack(side=tk.LEFT, fill=tk.Y, padx=20, pady=20)
+
+        self.canvas = tk.Canvas(leftContainer, bg="#e6f2ff", highlightthickness=0)
+        scrollbar = tk.Scrollbar(leftContainer, orient="vertical", command=self.canvas.yview)
+        self.leftFrame = tk.Frame(self.canvas, bg="#e6f2ff")
+
+        self.leftFrame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
+        self.canvas.create_window((0, 0), window=self.leftFrame, anchor="nw")
+        self.canvas.configure(yscrollcommand=scrollbar.set)
+
+        self.canvas.pack(side="left", fill="y", expand=True)
+        scrollbar.pack(side="right", fill="y")
 
         self.rightFrame = tk.Frame(self.topFrame, bg="#ffffff", bd=2, relief=tk.GROOVE, width=400)
         self.rightFrame.pack(side=tk.RIGHT, padx=20, pady=20, fill=tk.BOTH, expand=True)
@@ -196,8 +207,25 @@ class CrudGenerator(tk.Tk):
             self.crudVars[option] = var
 
     def addConfirmButton(self):
-        btn = tk.Button(self.bottomFrame, text="Generate Procedures", command=self.generateCrudProcedures, bg="#4CAF50", fg="white")
-        btn.pack(pady=10)
+        """Add buttons to the bottom of the window."""
+        btnGenerate = tk.Button(
+            self.bottomFrame, text="Generate Procedures",
+            command=self.generateCrudProcedures, bg="#4CAF50", fg="white"
+        )
+        btnGenerate.pack(pady=(10, 5))
+
+        btnLogout = tk.Button(
+            self.bottomFrame, text="Logout",
+            command=self.logout, bg="#f44336", fg="white"
+        )
+        btnLogout.pack(pady=(0, 10))
 
     def displayRightPanel(self, option):
         pass
+
+    def logout(self):
+        """Close current session and return to login window."""
+        self.destroy()
+        from ui.mainWindow import ConnectionApp
+        app = ConnectionApp()
+        app.mainloop()
