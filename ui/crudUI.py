@@ -206,19 +206,24 @@ class CrudGenerator(tk.Tk):
             chk.pack(anchor="w", padx=20)
             self.crudVars[option] = var
 
+        logoutBtn = tk.Button(self.leftFrame, text="Logout", command=self.logout, bg="#f44336", fg="white", font=("Segoe UI", 10, "bold"))
+        logoutBtn.pack(side=tk.BOTTOM, fill=tk.X, pady=15, padx=5)
+
+
     def addConfirmButton(self):
         """Add buttons to the bottom of the window."""
-        btnGenerate = tk.Button(
-            self.bottomFrame, text="Generate Procedures",
-            command=self.generateCrudProcedures, bg="#4CAF50", fg="white"
-        )
-        btnGenerate.pack(pady=(10, 5))
+        self.bottomFrameLeft = tk.Frame(self.bottomFrame, bg="#f0f8ff")
+        self.bottomFrameLeft.pack(side=tk.LEFT, padx=20)
 
-        btnLogout = tk.Button(
-            self.bottomFrame, text="Logout",
-            command=self.logout, bg="#f44336", fg="white"
-        )
-        btnLogout.pack(pady=(0, 10))
+        self.bottomFrameRight = tk.Frame(self.bottomFrame, bg="#f0f8ff")
+        self.bottomFrameRight.pack(side=tk.RIGHT, pady=10)
+
+        # Botones de acción (lado derecho)
+        generateBtn = tk.Button(self.bottomFrameRight, text="Generate Procedures", command=self.generateCrudProcedures, bg="#4CAF50", fg="white")
+        generateBtn.pack(side=tk.LEFT, padx=10)
+
+        permissionsBtn = tk.Button(self.bottomFrameRight, text="View Permissions", command=self.viewPermissions, bg="#2196F3", fg="white")
+        permissionsBtn.pack(side=tk.LEFT, padx=10)
 
     def displayRightPanel(self, option):
         pass
@@ -229,3 +234,19 @@ class CrudGenerator(tk.Tk):
         from ui.mainWindow import ConnectionApp
         app = ConnectionApp()
         app.mainloop()
+
+    def viewPermissions(self):
+        from backend.db.metadata import getPermissions
+
+        schema = self.selectedSchema.get()
+        tables = [t for t, v in self.tableVars.items() if v.get()]
+        allPermissions = ""
+
+        for table in tables:
+            permissions = getPermissions(self.engine, self.host, self.user, self.password, self.dbname, schema, table)
+            allPermissions += f"🔹 Table: {table}\n"
+            for col, can_read, can_write in permissions:
+                allPermissions += f"  • {col} → Read: {'✅' if can_read else '❌'} | Write: {'✅' if can_write else '❌'}\n"
+            allPermissions += "\n"
+
+        self.showSqlInPanel(allPermissions)
