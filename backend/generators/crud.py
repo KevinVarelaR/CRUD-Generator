@@ -139,7 +139,8 @@ def generateUpdateMSSQL(schema, table, columns, prefix="", filterField="id"):
     """
 
 def generateSelectMSSQL(schema, table, columns, prefix="", filterFields=None):
-    validColumns = [col for col in columns if isinstance(col, tuple) and len(col) == 2]
+    validColumns = [ (row[0], row[1]) for row in columns if len(row) == 2 ]
+   
     if not validColumns:
         return f"-- No valid columns found for table {table}"
 

@@ -112,7 +112,8 @@ def getColumns(engine, host, user, password, database, schema, table):
                 cur.execute(f"""
                     SELECT COLUMN_NAME, DATA_TYPE
                     FROM INFORMATION_SCHEMA.COLUMNS
-                    WHERE TABLE_NAME = '{table}';
+                    WHERE TABLE_NAME = '{table}'
+                    AND TABLE_SCHEMA = '{schema}';
                 """)
             columns = cur.fetchall()
     except Exception as e:
