@@ -119,3 +119,30 @@ def getColumns(engine, host, user, password, database, schema, table):
     except Exception as e:
         print("Error retrieving columns:", e)
     return columns
+
+def getPermissions(engine, host, user, password, dbname, schema, table):
+    try:
+        conn = connectToDatabase(engine, host, user, password, dbname)
+        with conn.cursor() as cur:
+            if engine == "PostgreSQL":
+                cur.execute(f"""
+                    SELECT column_name,
+                        has_column_privilege('{user}', '{schema}.{table}', column_name, 'SELECT') AS can_read,
+                        has_column_privilege('{user}', '{schema}.{table}', column_name, 'UPDATE') AS can_write
+                    FROM information_schema.columns
+                    WHERE table_schema = %s AND table_name = %s;
+                """, (schema, table))
+                return cur.fetchall()
+            elif engine == "MSSQL":
+                cur.execute(f"""
+                    SELECT c.name AS column_name,
+                        CASE WHEN perm.permission_name = 'SELECT' THEN 1 ELSE 0 END AS can_read,
+                        CASE WHEN perm.permission_name = 'UPDATE' THEN 1 ELSE 0 END AS can_write
+                    FROM sys.columns c
+                    LEFT JOIN sys.database_permissions perm ON c.object_id = perm.major_id AND c.column_id = perm.minor_id
+                    WHERE object_id = OBJECT_ID('{schema}.{table}');
+                """)
+                return cur.fetchall()
+    except Exception as e:
+        print(f"Error fetching permissions: {e}")
+        return []
