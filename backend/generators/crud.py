@@ -93,10 +93,23 @@ def generateSelectPostgres(schema, table, columns, prefix="", filterFields=None)
     END;
     $$ LANGUAGE plpgsql;
     """
+def normalize_dtype(dtype):
+    """
+    Si se recibe un tipo como "varchar" sin límite (o de forma mínima), le asigna un límite predeterminado.
+    Puedes ajustar el límite según la columna o tus necesidades.
+    """
+    dtype_lower = dtype.lower().strip()
+    if dtype_lower in ['varchar', 'char']:
+        return f"{dtype.upper()}(100)"
+    if "varchar" in dtype_lower and "(" not in dtype_lower:
+        return "VARCHAR(100)"
+    if "char" in dtype_lower and "(" not in dtype_lower:
+        return "CHAR(100)"
+    return dtype
 
 def generateInsertMSSQL(schema, table, columns, prefix=""):
     colNames = [col[0] for col in columns if col[0] != 'id']
-    params = ', '.join([f"@p_{col} {dtype}" for col, dtype in columns if col != 'id'])
+    params = ', '.join([f"@p_{col} {normalize_dtype(dtype)}" for col, dtype in columns if col != 'id'])
     insertCols = ', '.join(colNames)
     values = ', '.join([f"@p_{col}" for col in colNames])
     name = f"{schema}.{prefix}Insert{table.capitalize()}"
@@ -124,7 +137,7 @@ def generateDeleteMSSQL(schema, table, prefix="", filterField="id"):
 
 def generateUpdateMSSQL(schema, table, columns, prefix="", filterField="id"):
     sets = ', '.join([f"{col} = @p_{col}" for col, _ in columns if col != filterField])
-    params = ', '.join([f"@p_{col} {dtype}" for col, dtype in columns])
+    params = ', '.join([f"@p_{col} {normalize_dtype(dtype)}" for col, dtype in columns])
     name = f"{schema}.{prefix}Update{table.capitalize()}"
 
     return f"""
@@ -153,11 +166,11 @@ def generateSelectMSSQL(schema, table, columns, prefix="", filterFields=None):
             if not dtype:
                 return f"-- Filter field '{field}' not found in table {table}"
             filters.append((field, dtype))
-        paramDefs = ', '.join([f"@p_{col} {dtype}" for col, dtype in filters])
+        paramDefs = ', '.join([f"@p_{col} {normalize_dtype(dtype)}" for col, dtype in filters])
         whereClause = ' AND '.join([f"{col} = @p_{col}" for col, _ in filters])
     else:
         filterCol, filterType = validColumns[0]
-        paramDefs = f"@p_{filterCol} {filterType}"
+        paramDefs = f"@p_{filterCol} {normalize_dtype(filterType)}"
         whereClause = f"{filterCol} = @p_{filterCol}"
 
     name = f"{schema}.{prefix}Select{table.capitalize()}"
