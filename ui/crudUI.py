@@ -13,6 +13,33 @@ from backend.generators.crud import (
 )
 
 class CrudGenerator(tk.Tk):
+    """
+    Brief description:
+        Main application window for generating and executing SQL CRUD procedures
+        based on the selected database schema and tables.
+
+    Attributes:
+        engine (str): Database engine ("PostgreSQL" or "MSSQL").
+        host (str): Hostname or IP address of the database server.
+        user (str): Database username.
+        password (str): Database password.
+        dbname (str): Target database name.
+        selectedTable (tk.StringVar): Currently selected table.
+        selectedOption (tk.StringVar): Currently selected CRUD operation.
+        executionMode (tk.StringVar): Execution mode ("Code Generation" or "Code Generation and Execution").
+        selectedSchema (tk.StringVar): Currently selected database schema.
+        prefixEntry (tk.Entry or None): Entry widget for optional procedure/function prefix.
+        schemaOptions (list): List of available schemas in the database.
+        tableVars (dict): Mapping of table names to selection variables.
+        crudVars (dict): Mapping of CRUD actions to selection variables.
+
+    Methods:
+        - buildLayout(): Constructs the main layout.
+        - buildLeftPanel(): Builds the selection UI for tables and CRUD options.
+        - updateTableCheckboxes(): Updates table list dynamically.
+        - displayRightPanel(sql): Displays generated SQL code in the right panel.
+        - addConfirmButton(): Adds the confirm/generate button.
+    """
     def __init__(self, engine, host, user, password, dbname):
         super().__init__()
         self.engine = engine
@@ -45,6 +72,17 @@ class CrudGenerator(tk.Tk):
         self.addConfirmButton()
 
     def buildLayout(self):
+        """
+        Brief description:
+            Constructs the main graphical layout of the application, including top, bottom,
+            left (with scrollable canvas), and right frames for interaction and display.
+
+        Parameters:
+            None (uses internal state to build and assign frame widgets).
+
+        Returns:
+            None
+        """
         self.mainFrame = tk.Frame(self, bg="#f0f8ff")
         self.mainFrame.pack(fill=tk.BOTH, expand=True)
 
@@ -72,6 +110,17 @@ class CrudGenerator(tk.Tk):
         self.bottomFrame.pack(side=tk.BOTTOM, pady=10)
 
     def executeSql(self, sql):
+        """
+        Brief description:
+            Executes a given SQL statement on the connected database (PostgreSQL or MSSQL).
+            Shows an error message if execution fails.
+
+        Parameters:
+            sql (str): The SQL statement to execute.
+
+        Returns:
+            None
+        """
         try:
             if self.engine == "PostgreSQL":
                 conn = psycopg2.connect(
@@ -93,6 +142,16 @@ class CrudGenerator(tk.Tk):
             messagebox.showerror("Error", f"❌ Failed to execute procedure:{e}")
 
     def showSqlInPanel(self, sql):
+        """
+        Brief description:
+            Displays the given SQL code in the right-side panel of the UI using a read-only text widget.
+
+        Parameters:
+            sql (str): The SQL code to display in the panel.
+
+        Returns:
+            None
+        """
         for widget in self.rightFrame.winfo_children():
             widget.destroy()
         text = tk.Text(self.rightFrame, wrap="word", font=("Courier", 10), bg="#f9f9f9")
@@ -101,6 +160,36 @@ class CrudGenerator(tk.Tk):
         text.config(state="disabled")
 
     def generateCrudProcedures(self):
+        """_ Breve descripción:
+        Genera (y opcionalmente ejecuta) procedimientos SQL CRUD para las tablas seleccionadas,
+        según las acciones elegidas y el motor de base de datos configurado (PostgreSQL o MSSQL).
+        Para cada tabla activa y acción CRUD (Insert, Update, Delete, Filter), se invoca la función 
+        de generación SQL correspondiente y, de ser el modo de ejecución el adecuado, se ejecuta 
+        la instrucción generada.
+        Parámetros:
+        self: Objeto de la clase que contiene la configuración y los elementos de la interfaz de usuario. 
+              Debe disponer de los siguientes atributos:
+              - tableVars (dict): Diccionario que asocia nombres de tabla con variables de selección.
+              - selectedSchema (tkinter variable): Elemento que almacena el esquema seleccionado.
+              - executionMode (tkinter variable): Elemento que indica el modo de ejecución ("Code Generation and Execution" u otro).
+              - prefixEntry (widget o similar): Entrada opcional para un prefijo a aplicar en la generación de SQL.
+              - engine (str): Motor de la base de datos ("PostgreSQL" o "MSSQL").
+              - host (str): Dirección del host de la base de datos.
+              - user (str): Usuario de la base de datos.
+              - password (str): Contraseña de la base de datos.
+              - dbname (str): Nombre de la base de datos.
+              Además, se espera que disponga de los métodos:
+              - getSelectedCrudActions(): Devuelve las acciones CRUD seleccionadas.
+              - executeSql(sql): Ejecuta la instrucción SQL proporcionada.
+              - showSqlInPanel(sql): Muestra en un panel el SQL generado.
+              Retorno:
+        None
+        (El método no retorna ningún valor; sin embargo, genera efectos secundarios:
+            - Muestra en un panel el código SQL completo generado.
+            - Ejecuta, si el modo de ejecución es "Code Generation and Execution", cada instrucción SQL.
+            - Muestra un mensaje de éxito si se ejecutó al menos una instrucción SQL.)
+        """
+        
         tables = [table for table, var in self.tableVars.items() if var.get()]
         actions = self.getSelectedCrudActions()
         schema = self.selectedSchema.get()
@@ -149,12 +238,30 @@ class CrudGenerator(tk.Tk):
             messagebox.showinfo("Success", "✅ All procedures were successfully executed.")
 
     def getSelectedCrudActions(self):
+        """
+        Returns a list of CRUD actions currently selected by the user.
+
+        Iterates over the CRUD action checkboxes and includes those that 
+        are checked (e.g., Insert, Delete, Update, Filter).
+        """
         return [action for action, var in self.crudVars.items() if var.get()]
 
     def getAvailableTables(self):
+        """
+        Retrieves a list of available tables from the currently selected schema.
+
+        Uses the getTables() utility to query the database and return all 
+        base tables for the active schema selection.
+        """
         return getTables(self.engine, self.host, self.user, self.password, self.dbname, self.selectedSchema.get())
 
     def updateTableCheckboxes(self, event=None):
+        """
+        Updates the list of table checkboxes based on the currently selected schema.
+
+        Destroys any existing checkbox list, fetches available tables for the 
+        selected schema, and renders a new group of checkboxes for user selection.
+        """
         if hasattr(self, 'tableFrame'):
             self.tableFrame.destroy()
 
@@ -172,6 +279,16 @@ class CrudGenerator(tk.Tk):
             self.tableVars[table] = var
 
     def buildLeftPanel(self):
+        """
+        Builds the left panel of the interface with input options for CRUD generation.
+
+        This includes:
+        - Schema selection (with PostgreSQL/MSSQL defaults)
+        - Prefix input field
+        - Execution mode selector
+        - CRUD action checkboxes (Insert, Delete, Update, Filter)
+        - Logout button at the bottom
+        """
         self.schemaOptions = getSchemas(self.engine, self.host, self.user, self.password, self.dbname)
         tk.Label(self.leftFrame, text="Select schema", bg="#e6f2ff", font=("Segoe UI", 12, "bold")).pack(anchor="w", padx=10, pady=(10, 0))
 
@@ -211,7 +328,13 @@ class CrudGenerator(tk.Tk):
 
 
     def addConfirmButton(self):
-        """Add buttons to the bottom of the window."""
+        """
+        Adds and positions action buttons at the bottom of the interface.
+
+        This includes buttons for generating procedures and viewing permissions.
+        Buttons are grouped in left and right frames within the bottom section
+        of the main window.
+        """
         self.bottomFrameLeft = tk.Frame(self.bottomFrame, bg="#f0f8ff")
         self.bottomFrameLeft.pack(side=tk.LEFT, padx=20)
 
@@ -226,16 +349,31 @@ class CrudGenerator(tk.Tk):
         permissionsBtn.pack(side=tk.LEFT, padx=10)
 
     def displayRightPanel(self, option):
+        """
+        Placeholder for displaying content in the right panel based on user selection.
+        """
         pass
 
     def logout(self):
-        """Close current session and return to login window."""
+        """
+        Closes the current session and returns the user to the login window.
+
+        This method destroys the current application window and reinitializes
+        the login interface by launching a new instance of ConnectionApp.
+        """
         self.destroy()
         from ui.mainWindow import ConnectionApp
         app = ConnectionApp()
         app.mainloop()
 
     def viewPermissions(self):
+        """
+        Retrieves and displays read/write permissions for the selected tables.
+
+        This method calls the `getPermissions` function to obtain column-level 
+        access information (read and write) for each selected table within the 
+        current schema. The results are formatted and displayed in the right panel.
+        """
         from backend.db.metadata import getPermissions
 
         schema = self.selectedSchema.get()

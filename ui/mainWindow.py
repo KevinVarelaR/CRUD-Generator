@@ -10,8 +10,16 @@ from ui.crudUI import CrudGenerator
 
 class ConnectionApp(tk.Tk):
     """
-    Initial window for collecting database connection parameters.
-    Opens the main CRUD interface upon successful connection.
+    Brief description:
+        GUI application window for collecting database connection parameters from the user.
+        Initializes and centers the interface, and launches the main CRUD generator upon successful connection.
+
+    Attributes:
+        engine (tk.StringVar): Selected database engine ("PostgreSQL" or "MSSQL").
+        host (tk.StringVar): Hostname or IP address.
+        username (tk.StringVar): Database username.
+        password (tk.StringVar): Database password.
+        database (tk.StringVar): Name of the database to connect to.
     """
     def __init__(self):
         super().__init__()
@@ -38,7 +46,17 @@ class ConnectionApp(tk.Tk):
         self.buildUi()
 
     def buildUi(self):
-        """Construct the UI elements for the connection window."""
+        """
+        Brief description:
+            Builds the user interface for the database connection window, including input fields
+            for engine, host, username, password, and database name, along with a connect button.
+
+        Parameters:
+            None (uses internal tkinter variables and widget states).
+
+        Returns:
+            None
+        """
         padding = {'padx': 20, 'pady': 5}
 
         tk.Label(self, text="Database Engine", font=("Segoe UI", 10, "bold"), bg="#f0f0f0").pack(**padding)
@@ -63,7 +81,17 @@ class ConnectionApp(tk.Tk):
         ).pack(pady=20)
 
     def connectToDatabase(self):
-        """Try to connect to the database using entered parameters."""
+        """
+        Brief description:
+            Attempts to establish a connection to the selected database engine using
+            the provided credentials. If successful, launches the main CRUD interface.
+
+        Parameters:
+            None (retrieves connection data from internal tkinter variables).
+
+        Returns:
+            None
+        """
         engine = self.engine.get()
         host = self.host.get()
         user = self.username.get()

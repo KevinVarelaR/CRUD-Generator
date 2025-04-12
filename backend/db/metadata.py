@@ -121,6 +121,24 @@ def getColumns(engine, host, user, password, database, schema, table):
     return columns
 
 def getPermissions(engine, host, user, password, dbname, schema, table):
+    """
+    Brief description:
+        Retrieves column-level read and write permissions for a given user on a specified table,
+        supporting both PostgreSQL and MSSQL engines.
+
+    Parameters:
+        engine (str): Database engine ("PostgreSQL" or "MSSQL").
+        host (str): Hostname or IP address of the database server.
+        user (str): Username to check permissions for.
+        password (str): Password for the database connection.
+        dbname (str): Name of the target database.
+        schema (str): Schema where the table resides.
+        table (str): Name of the target table.
+
+    Returns:
+        list[tuple]: A list of tuples containing column names and corresponding read/write flags.
+                     Returns an empty list if an error occurs.
+    """
     try:
         conn = connectToDatabase(engine, host, user, password, dbname)
         with conn.cursor() as cur:
